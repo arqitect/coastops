@@ -66,6 +66,7 @@
     const label = row?.querySelector('.next');
     const button = app.querySelector('.home-start');
     if (!row || !label || !button) return;
+    if (row.classList.contains('started') && button.classList.contains('resume')) return;
     row.classList.add('started');
     label.classList.add('started');
     label.textContent = 'IN PROGRESS';
@@ -83,11 +84,12 @@
     const sticky = app.querySelector('.sticky-action');
     const button = sticky?.querySelector('.primary');
     const kicker = sticky?.querySelector('.sticky-kicker');
-    if (button) {
+    if (button && button.dataset.activeUi !== '1') {
       button.innerHTML = 'Resume job <span class="arrow-inline">→</span>';
       button.onclick = () => window.nav('active');
+      button.dataset.activeUi = '1';
     }
-    if (kicker) kicker.textContent = 'Active now';
+    if (kicker && kicker.textContent !== 'Active now') kicker.textContent = 'Active now';
   }
 
   function enhanceCustomerView() {
