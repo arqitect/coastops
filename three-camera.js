@@ -4,42 +4,42 @@
   const DOORS = ['Door_Front_Left','Door_Front_Right','Door_Rear_Left','Door_Rear_Right'];
 
   const frontThreeQuarter = { id:'front-three-quarter', kind:'exterior', carY:0 };
-  const driverSide = { id:'driver-side', kind:'exterior', carY:Math.PI/2 };
+  const driverSide = { id:'driver-side', kind:'exterior', carY:-Math.PI/2 };
   const rearThreeQuarter = { id:'rear-three-quarter', kind:'exterior', carY:Math.PI };
-  const passengerSide = { id:'passenger-side', kind:'exterior', carY:-Math.PI/2 };
+  const passengerSide = { id:'passenger-side', kind:'exterior', carY:Math.PI/2 };
 
   // Interior coordinates are authored in the car's local frame, then rotated with carY.
   // The camera stays outside the opening at roughly steering-wheel / seat-back height,
   // matching common dealership/detailing photos rather than flying into the hinge.
   const driverSeat = {
-    id:'driver-seat', kind:'interior', carY:Math.PI/2,
+    id:'driver-seat', kind:'interior', carY:-Math.PI/2,
     door:'Door_Front_Left', doorAngle:78, preDoor:34,
     approach:[4.42,1.48,-0.28], camera:[4.02,1.34,-0.24],
     target:[1.14,0.95,0.14], fov:50, cabinLight:1.48,
   };
 
   const rearSeats = {
-    id:'rear-seats', kind:'interior', carY:Math.PI,
-    door:'Door_Rear_Left', doorAngle:76, preDoor:32,
+    id:'rear-seats', kind:'interior', carY:-Math.PI/2,
+    door:'Door_Rear_Left', doorAngle:80, preDoor:34,
     approach:[4.28,1.44,-1.26], camera:[3.90,1.30,-1.24],
     target:[1.02,0.94,-1.00], fov:50, cabinLight:1.50,
   };
 
   const passengerArea = {
-    id:'passenger-area', kind:'interior', carY:-Math.PI/2,
+    id:'passenger-area', kind:'interior', carY:Math.PI/2,
     door:'Door_Front_Right', doorAngle:78, preDoor:34,
     approach:[-4.42,1.48,-0.28], camera:[-4.02,1.34,-0.24],
     target:[-1.14,0.95,0.14], fov:50, cabinLight:1.46,
   };
 
-  // Keep the guide moving clockwise. At each side, show the exterior first, then
-  // dip through the nearby doorway before continuing around the car.
+  // Keep the guide on one clockwise physical walkaround. Interior beats stay on
+  // the same side as the exterior view before them instead of crossing the car.
   const walkaround = [
     frontThreeQuarter,
     driverSide,
     driverSeat,
-    rearThreeQuarter,
     rearSeats,
+    rearThreeQuarter,
     passengerSide,
     passengerArea,
   ];
@@ -47,7 +47,7 @@
   const sequences = {
     before:walkaround,
     work:walkaround,
-    proof:[rearThreeQuarter, rearSeats, passengerSide, passengerArea, frontThreeQuarter, driverSide],
+    proof:[rearThreeQuarter, passengerSide, passengerArea, frontThreeQuarter, driverSide, driverSeat, rearSeats],
   };
 
   const state = {
