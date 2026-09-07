@@ -187,7 +187,7 @@
     .approval-card .price-line { display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding-top:13px; border-top:1px solid var(--line); }
     .approval-card .price-line strong { font-size:20px; }
     .customer-shell { min-height:100dvh; background:#fff; padding:22px 18px 100px; }
-    .customer-brand { padding-bottom:17px; border-bottom:1px solid var(--line); margin-bottom:20px; }
+    .customer-brand { padding-bottom:17px; border-bottom:1px solid var(--line); margin-bottom:20px; position:relative; padding-right:120px; }
     .customer-brand .name { font-size:12px; font-weight:800; letter-spacing:.07em; margin-bottom:3px; color:var(--accent-ink); }
     .customer-shell .eyebrow { color:var(--accent-ink); }
     .customer-brand .meta { font-size:11px; color:var(--muted); }
@@ -208,6 +208,19 @@
     .toast { position:fixed; z-index:40; top:14px; left:50%; transform:translate(-50%,-16px); opacity:0; width:min(calc(100vw - 30px),400px); background:#1b1b1d; color:white; padding:11px 13px; border-radius:10px; font-size:12px; transition:.2s ease; pointer-events:none; box-shadow:0 8px 30px rgba(0,0,0,.2); }
     .toast.show { transform:translate(-50%,0); opacity:1; }
     .status-banner { padding:10px 12px; background:#eaf6ef; border:1px solid #c8e7d5; border-radius:9px; font-size:12px; color:#22613f; margin:12px 0 5px; }
+
+    .home-start-wrap { padding:12px 0 15px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:minmax(0,1fr) 128px; gap:12px; align-items:center; }
+    .home-start-context span { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:760; margin-bottom:3px; }
+    .home-start-context strong { display:block; font-size:12px; line-height:1.25; }
+    .home-start { min-height:44px; border-radius:10px; font-size:13px; background:var(--ink); box-shadow:none; }
+    .home-start:active { background:#28282b; }
+    .return-home { position:absolute; right:0; top:-5px; min-height:34px; border:1px solid var(--line); border-radius:9px; background:#fff; padding:0 10px; font-size:11px; font-weight:700; color:var(--ink); cursor:pointer; }
+    .return-home:active { background:var(--surface-2); }
+
+    @media (max-width:350px) {
+      .home-start-wrap { grid-template-columns:1fr; }
+      .home-start { width:100%; }
+    }
     @media (min-width:700px) {
       body { padding:28px 0; background:#e9e9e7; }
       .phone { min-height:844px; height:844px; border-radius:28px; overflow:hidden; }
