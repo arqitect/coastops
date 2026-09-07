@@ -36,18 +36,18 @@
   // the same side as the exterior view before them instead of crossing the car.
   const walkaround = [
     frontThreeQuarter,
-    driverSide,
     driverSeat,
     rearSeats,
+    driverSide,
     rearThreeQuarter,
-    passengerSide,
     passengerArea,
+    passengerSide,
   ];
 
   const sequences = {
     before:walkaround,
     work:walkaround,
-    proof:[rearThreeQuarter, passengerSide, passengerArea, frontThreeQuarter, driverSide, driverSeat, rearSeats],
+    proof:[rearThreeQuarter, passengerArea, passengerSide, frontThreeQuarter, driverSeat, rearSeats, driverSide],
   };
 
   const state = {
