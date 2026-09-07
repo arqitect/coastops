@@ -13,23 +13,23 @@
   // matching common dealership/detailing photos rather than flying into the hinge.
   const driverSeat = {
     id:'driver-seat', kind:'interior', carY:0,
-    door:'Door_Front_Left', doorAngle:56, preDoor:24,
-    approach:[3.55,1.30,0.46], camera:[3.08,1.16,0.42],
-    target:[0.12,0.90,0.42], fov:50, cabinLight:1.46,
+    door:'Door_Front_Left', doorAngle:78, preDoor:34,
+    approach:[4.42,1.48,-0.28], camera:[4.02,1.34,-0.24],
+    target:[1.14,0.95,0.14], fov:50, cabinLight:1.48,
   };
 
   const rearSeats = {
     id:'rear-seats', kind:'interior', carY:Math.PI,
-    door:'Door_Rear_Left', doorAngle:52, preDoor:22,
-    approach:[3.48,1.28,-1.00], camera:[3.02,1.14,-1.02],
-    target:[0.08,0.88,-0.92], fov:49, cabinLight:1.50,
+    door:'Door_Rear_Left', doorAngle:72, preDoor:30,
+    approach:[4.28,1.44,-1.26], camera:[3.90,1.30,-1.24],
+    target:[1.02,0.94,-1.00], fov:50, cabinLight:1.50,
   };
 
   const passengerArea = {
     id:'passenger-area', kind:'interior', carY:-Math.PI/2,
-    door:'Door_Front_Right', doorAngle:56, preDoor:24,
-    approach:[-3.55,1.30,0.46], camera:[-3.08,1.16,0.42],
-    target:[-0.12,0.90,0.42], fov:50, cabinLight:1.44,
+    door:'Door_Front_Right', doorAngle:78, preDoor:34,
+    approach:[-4.42,1.48,-0.28], camera:[-4.02,1.34,-0.24],
+    target:[-1.14,0.95,0.14], fov:50, cabinLight:1.46,
   };
 
   // One continuous clockwise visual tour with interior beats between exterior rotations.
