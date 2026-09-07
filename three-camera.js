@@ -3,46 +3,51 @@
   const GSAP_URL = 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js';
   const DOORS = ['Door_Front_Left','Door_Front_Right','Door_Rear_Left','Door_Rear_Right'];
 
-  const exterior = [
-    { id:'front-three-quarter', kind:'exterior', carY:0 },
-    { id:'passenger-side', kind:'exterior', carY:-Math.PI/2 },
-    { id:'rear-three-quarter', kind:'exterior', carY:Math.PI },
-    { id:'driver-side', kind:'exterior', carY:Math.PI/2 },
-  ];
+  const frontThreeQuarter = { id:'front-three-quarter', kind:'exterior', carY:0 };
+  const driverSide = { id:'driver-side', kind:'exterior', carY:Math.PI/2 };
+  const rearThreeQuarter = { id:'rear-three-quarter', kind:'exterior', carY:Math.PI };
+  const passengerSide = { id:'passenger-side', kind:'exterior', carY:-Math.PI/2 };
 
-  // Three.js coordinates after Blender's Y-up export: +X = vehicle left, +Z = vehicle front.
-  // Interior cameras stay outside the body, roughly where a person would stand to photograph the seat.
-  const interior = [
-    {
-      id:'driver-seat', kind:'interior', carY:0,
-      door:'Door_Front_Left', doorAngle:34, preDoor:17,
-      approach:[2.95,1.56,0.28], camera:[2.34,1.38,0.18],
-      target:[0.42,0.84,0.34], fov:46, cabinLight:1.45,
-    },
-    {
-      id:'passenger-area', kind:'interior', carY:0,
-      door:'Door_Front_Right', doorAngle:-34, preDoor:-17,
-      approach:[-2.95,1.56,0.28], camera:[-2.34,1.38,0.18],
-      target:[-0.42,0.84,0.34], fov:46, cabinLight:1.42,
-    },
-    {
-      id:'rear-seats', kind:'interior', carY:0,
-      door:'Door_Rear_Left', doorAngle:32, preDoor:16,
-      approach:[2.90,1.52,-0.92], camera:[2.32,1.34,-0.94],
-      target:[0.12,0.84,-0.82], fov:47, cabinLight:1.50,
-    },
+  // Interior coordinates are authored in the car's local frame, then rotated with carY.
+  // The camera stays outside the opening at roughly steering-wheel / seat-back height,
+  // matching common dealership/detailing photos rather than flying into the hinge.
+  const driverSeat = {
+    id:'driver-seat', kind:'interior', carY:0,
+    door:'Door_Front_Left', doorAngle:36, preDoor:17,
+    approach:[3.55,1.30,0.46], camera:[3.08,1.16,0.42],
+    target:[0.12,0.90,0.42], fov:50, cabinLight:1.46,
+  };
+
+  const rearSeats = {
+    id:'rear-seats', kind:'interior', carY:Math.PI,
+    door:'Door_Rear_Left', doorAngle:34, preDoor:16,
+    approach:[3.48,1.28,-1.00], camera:[3.02,1.14,-1.02],
+    target:[0.08,0.88,-0.92], fov:49, cabinLight:1.50,
+  };
+
+  const passengerArea = {
+    id:'passenger-area', kind:'interior', carY:-Math.PI/2,
+    door:'Door_Front_Right', doorAngle:36, preDoor:17,
+    approach:[-3.55,1.30,0.46], camera:[-3.08,1.16,0.42],
+    target:[-0.12,0.90,0.42], fov:50, cabinLight:1.44,
+  };
+
+  // One continuous clockwise visual tour with interior beats between exterior rotations.
+  // This reads more like a guided walkaround than "four exteriors, then three doors".
+  const walkaround = [
+    frontThreeQuarter,
+    driverSeat,
+    driverSide,
+    rearThreeQuarter,
+    rearSeats,
+    passengerSide,
+    passengerArea,
   ];
 
   const sequences = {
-    before:[...exterior, ...interior],
-    work:[...exterior, ...interior],
-    proof:[
-      interior[2],
-      { id:'passenger-exterior', kind:'exterior', carY:-Math.PI/2 },
-      { id:'rear-three-quarter', kind:'exterior', carY:Math.PI },
-      { id:'front-three-quarter', kind:'exterior', carY:0 },
-      { id:'driver-side', kind:'exterior', carY:Math.PI/2 },
-    ],
+    before:walkaround,
+    work:walkaround,
+    proof:[rearSeats, passengerSide, passengerArea, rearThreeQuarter, frontThreeQuarter],
   };
 
   const state = {
@@ -61,6 +66,7 @@
     target:null,
     car:null,
     modelRadius:2.8,
+    carCenter:null,
     doors:new Map(),
     cabinLight:null,
     stage:null,
@@ -109,6 +115,13 @@
   function loadGsap(){
     if(window.gsap) return Promise.resolve(window.gsap);
     return new Promise((resolve,reject)=>{
+      const existing=[...document.scripts].find(s=>s.src===GSAP_URL);
+      if(existing){
+        if(window.gsap) return resolve(window.gsap);
+        existing.addEventListener('load',()=>window.gsap?resolve(window.gsap):reject(new Error('GSAP failed to initialize')),{once:true});
+        existing.addEventListener('error',reject,{once:true});
+        return;
+      }
       const script=document.createElement('script');
       script.src=GSAP_URL;
       script.async=true;
@@ -191,18 +204,51 @@
   async function loadModel(){
     const T=state.THREE,gltf=await new state.GLTFLoader().loadAsync(MODEL_URL);
     state.scene.add(gltf.scene);
+
+    const initialBounds=new T.Box3().setFromObject(gltf.scene),center=initialBounds.getCenter(new T.Vector3());
+    gltf.scene.position.x-=center.x;
+    gltf.scene.position.z-=center.z;
+    gltf.scene.position.y-=initialBounds.min.y;
+    gltf.scene.updateMatrixWorld(true);
+
     state.car=gltf.scene.getObjectByName('CoastOps_Car')||gltf.scene;
+    const bounds=new T.Box3().setFromObject(gltf.scene),size=bounds.getSize(new T.Vector3());
+    state.carCenter=bounds.getCenter(new T.Vector3());
+    state.modelRadius=Math.max(2.55,Math.hypot(size.x,size.z)*.5);
+
     for(const name of DOORS){
       const object=gltf.scene.getObjectByName(name);
       if(!object) throw new Error(`Required node missing: ${name}`);
-      state.doors.set(name,{object,baseQuaternion:object.quaternion.clone(),motion:{angle:0}});
+      const door={object,baseQuaternion:object.quaternion.clone(),motion:{angle:0},openSign:1};
+      state.doors.set(name,door);
+      door.openSign=detectOutwardSign(door);
+      applyDoor(name,0);
     }
+
     tuneMaterials(gltf.scene);
-    const bounds=new T.Box3().setFromObject(gltf.scene),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3());
-    gltf.scene.position.x-=center.x;
-    gltf.scene.position.z-=center.z;
-    gltf.scene.position.y-=bounds.min.y;
-    state.modelRadius=Math.max(2.55,Math.hypot(size.x,size.z)*.5);
+  }
+
+  function doorLateralDistance(object){
+    const box=new state.THREE.Box3().setFromObject(object);
+    const center=box.getCenter(new state.THREE.Vector3());
+    return Math.abs(center.x-(state.carCenter?.x||0));
+  }
+
+  function applyDoorRaw(door,signedAngle){
+    const T=state.THREE;
+    const yaw=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),T.MathUtils.degToRad(signedAngle));
+    door.object.quaternion.copy(yaw).multiply(door.baseQuaternion);
+    door.object.updateMatrixWorld(true);
+  }
+
+  function detectOutwardSign(door){
+    applyDoorRaw(door,11);
+    const plus=doorLateralDistance(door.object);
+    applyDoorRaw(door,-11);
+    const minus=doorLateralDistance(door.object);
+    door.object.quaternion.copy(door.baseQuaternion);
+    door.object.updateMatrixWorld(true);
+    return plus>=minus ? 1 : -1;
   }
 
   function tuneMaterials(root){
@@ -243,11 +289,25 @@
     return{camera:target.clone().add(direction.multiplyScalar(distance)).toArray(),target:target.toArray(),fov};
   }
 
+  function rotateLocal(point,angle){
+    const v=new state.THREE.Vector3(...point);
+    v.applyAxisAngle(new state.THREE.Vector3(0,1,0),angle||0);
+    return v.toArray();
+  }
+
+  function interiorFrame(nextPose){
+    const angle=nextPose.carY||0;
+    return{
+      camera:rotateLocal(nextPose.camera,angle),
+      approach:rotateLocal(nextPose.approach||nextPose.camera,angle),
+      target:rotateLocal(nextPose.target,angle),
+      fov:nextPose.fov,
+    };
+  }
+
   function applyDoor(name,angle){
-    const door=state.doors.get(name);if(!door) return;
-    const yaw=new state.THREE.Quaternion().setFromAxisAngle(new state.THREE.Vector3(0,1,0),state.THREE.MathUtils.degToRad(angle));
-    // Apply the yaw in the parent frame. This preserves the imported mirrored door transforms.
-    door.object.quaternion.copy(yaw).multiply(door.baseQuaternion);
+    const door=state.doors.get(name);if(!door)return;
+    applyDoorRaw(door,angle*door.openSign);
     door.motion.angle=angle;
   }
 
@@ -256,25 +316,31 @@
     tl.to(door.motion,{angle,duration,onUpdate:()=>applyDoor(name,door.motion.angle)},at);
   }
 
-  function closeOtherDoors(tl,keep,duration,at){ for(const name of state.doors.keys()) if(name!==keep)tweenDoor(tl,name,0,duration,at); }
+  function closeOtherDoors(tl,keep,duration,at){for(const name of state.doors.keys())if(name!==keep)tweenDoor(tl,name,0,duration,at);}
 
   function setCamera(position,target,fov){
     state.camera.position.fromArray(position);state.target.fromArray(target);state.camera.fov=fov;state.camera.updateProjectionMatrix();state.camera.lookAt(state.target);
   }
 
-  function killTransition(){ if(state.transition){state.transition.kill();state.transition=null;} }
+  function killTransition(){if(state.transition){state.transition.kill();state.transition=null;}}
 
   function applyPose(nextPose,animate=true){
-    if(!state.ready||!state.car||!nextPose) return;
+    if(!state.ready||!state.car||!nextPose)return;
     killTransition();
-    const isExterior=nextPose.kind==='exterior',ext=isExterior?exteriorCamera():null;
-    const camera=isExterior?ext.camera:nextPose.camera,target=isExterior?ext.target:nextPose.target,fov=isExterior?ext.fov:nextPose.fov;
-    const carY=nearestAngle(state.car.rotation.y,nextPose.carY??0),cabin=isExterior?.18:(nextPose.cabinLight??1.45);
+
+    const isExterior=nextPose.kind==='exterior';
+    const frame=isExterior?exteriorCamera():interiorFrame(nextPose);
+    const camera=frame.camera,target=frame.target,fov=frame.fov;
+    const approach=isExterior?camera:frame.approach;
+    const carY=nearestAngle(state.car.rotation.y,nextPose.carY??0);
+    const cabin=isExterior?.18:(nextPose.cabinLight??1.45);
 
     if(!animate||reducedMotion){
       state.car.rotation.y=carY;
-      for(const name of state.doors.keys()) applyDoor(name,name===nextPose.door?(nextPose.doorAngle??0):0);
-      state.cabinLight.intensity=cabin;setCamera(camera,target,fov);return;
+      for(const name of state.doors.keys())applyDoor(name,name===nextPose.door?(nextPose.doorAngle??0):0);
+      state.cabinLight.intensity=cabin;
+      setCamera(camera,target,fov);
+      return;
     }
 
     let tl;
@@ -282,37 +348,39 @@
     state.transition=tl;
 
     if(isExterior){
-      closeOtherDoors(tl,null,.20,0);
+      closeOtherDoors(tl,null,.19,0);
       tl.to(state.car.rotation,{y:carY,duration:.34},0)
         .to(state.camera.position,{x:camera[0],y:camera[1],z:camera[2],duration:.34},0)
         .to(state.target,{x:target[0],y:target[1],z:target[2],duration:.34},0)
-        .to(state.camera,{fov,duration:.32,onUpdate:()=>state.camera.updateProjectionMatrix()},0)
-        .to(state.cabinLight,{intensity:cabin,duration:.20},0);
+        .to(state.camera,{fov,duration:.30,onUpdate:()=>state.camera.updateProjectionMatrix()},0)
+        .to(state.cabinLight,{intensity:cabin,duration:.18},0);
       return;
     }
 
-    const approach=nextPose.approach||camera,preDoor=nextPose.preDoor??Math.sign(nextPose.doorAngle||1)*17,approachFov=fov+3;
-    closeOtherDoors(tl,nextPose.door,.18,0);
-    tl.to(state.car.rotation,{y:carY,duration:.24},0)
-      .to(state.camera.position,{x:approach[0],y:approach[1],z:approach[2],duration:.25},0)
-      .to(state.target,{x:target[0],y:target[1],z:target[2],duration:.34},.04)
-      .to(state.camera,{fov:approachFov,duration:.20,onUpdate:()=>state.camera.updateProjectionMatrix()},.02);
-    tweenDoor(tl,nextPose.door,preDoor,.16,.02);
-    tweenDoor(tl,nextPose.door,nextPose.doorAngle,.22,.17);
-    tl.to(state.camera.position,{x:camera[0],y:camera[1],z:camera[2],duration:.26},.18)
-      .to(state.camera,{fov,duration:.24,onUpdate:()=>state.camera.updateProjectionMatrix()},.18)
-      .to(state.cabinLight,{intensity:cabin,duration:.30},.12);
+    const preDoor=nextPose.preDoor??17,approachFov=Math.min(54,fov+3);
+    closeOtherDoors(tl,nextPose.door,.17,0);
+    tl.to(state.car.rotation,{y:carY,duration:.20},0)
+      .to(state.camera.position,{x:approach[0],y:approach[1],z:approach[2],duration:.23},.02)
+      .to(state.target,{x:target[0],y:target[1],z:target[2],duration:.32},.04)
+      .to(state.camera,{fov:approachFov,duration:.18,onUpdate:()=>state.camera.updateProjectionMatrix()},.02);
+
+    tweenDoor(tl,nextPose.door,preDoor,.13,.02);
+    tweenDoor(tl,nextPose.door,nextPose.doorAngle,.20,.14);
+
+    tl.to(state.camera.position,{x:camera[0],y:camera[1],z:camera[2],duration:.25},.18)
+      .to(state.camera,{fov,duration:.22,onUpdate:()=>state.camera.updateProjectionMatrix()},.18)
+      .to(state.cabinLight,{intensity:cabin,duration:.28},.10);
   }
 
   function flushPending(){
-    if(!state.ready||!state.pending) return;
+    if(!state.ready||!state.pending)return;
     const count=state.pending;state.pending=0;
     state.index=(state.index+count)%seq().length;
     applyPose(pose(),true);
   }
 
   function next(){
-    if(!state.mode) setMode(detectMode());
+    if(!state.mode)setMode(detectMode());
     sync();
     if(!state.ready){state.pending=(state.pending+1)%seq().length;ensureRuntime();flash();return pose()?.id||null;}
     state.index=(state.index+1)%seq().length;
@@ -331,8 +399,6 @@
     if(!state.renderer||!state.stage||!state.camera)return;
     const rect=state.stage.getBoundingClientRect();if(rect.width<2||rect.height<2)return;
     state.renderer.setSize(rect.width,rect.height,false);state.camera.aspect=rect.width/rect.height;state.camera.updateProjectionMatrix();
-    // A fresh GSAP timeline may not report isActive() until its first tick. The timeline object itself is the guard.
-    // Never apply an animate=false exterior pose while a shutter transition exists.
     if(state.ready&&pose()?.kind==='exterior'&&!state.transition){const ext=exteriorCamera();setCamera(ext.camera,ext.target,ext.fov);}
   }
 
@@ -365,7 +431,6 @@
   window.carGuide={sync,setMode,next,reset,get step(){return pose()?.id||null;},get ready(){return state.ready;}};
 
   injectStyles();
-  // Start the 4.85 MiB model load on initial page load so the camera is normally ready before the first shutter.
   ensureRuntime();
   if(document.querySelector('.camera-screen .viewfinder')){setMode(detectMode());sync();}
 })();
