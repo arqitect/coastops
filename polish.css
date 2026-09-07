@@ -1,0 +1,172 @@
+/* Targeted demo polish: completed state, finish camera, mobile tap behavior */
+
+/* Prevent rapid shutter/button taps from triggering mobile double-tap zoom. */
+button,
+.shutter,
+.camera-screen {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.shutter {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Main schedule: make the lifecycle legible after the demo completes. */
+.next.completed {
+  color: var(--success);
+  white-space: nowrap;
+  font-size: 8.5px;
+}
+.next-job-row.completed {
+  background: linear-gradient(90deg,#eaf6ef,rgba(234,246,239,0));
+}
+.home-complete {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 28px minmax(0,1fr);
+  gap: 9px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #c8e7d5;
+  border-radius: 10px;
+  background: #f1f9f4;
+  color: #22613f;
+}
+.home-complete > span {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #dff1e6;
+  font-size: 13px;
+  font-weight: 850;
+}
+.home-complete strong { display:block; font-size:12px; margin-bottom:2px; }
+.home-complete small { display:block; color:#50705e; font-size:10px; }
+.completed-record { margin-top:18px; }
+.completed-home-button { width:100%; margin-top:18px; }
+
+/* More polished camera placeholder: a clean modern crossover in a camera-like scene. */
+.viewfinder {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 52% 31%,rgba(255,255,255,.15),transparent 22%),
+    linear-gradient(180deg,#5c6864 0%,#38423e 42%,#252a28 42.5%,#1d211f 100%);
+}
+.viewfinder::before {
+  content:"";
+  position:absolute;
+  left:-8%; right:-8%; bottom:22%;
+  height:19%;
+  background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(0,0,0,.16));
+  transform:skewY(-3deg);
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.viewfinder::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent 49.85%,rgba(255,255,255,.08) 50%,transparent 50.15%),
+    linear-gradient(transparent 49.85%,rgba(255,255,255,.06) 50%,transparent 50.15%);
+  opacity:.42;
+}
+.camera-car-placeholder {
+  position:absolute;
+  z-index:2;
+  width:96%;
+  left:2%;
+  top:25%;
+  filter:saturate(.92) contrast(1.03);
+}
+.camera-car-placeholder svg { display:block; width:100%; height:auto; overflow:visible; }
+.camera-car-placeholder > div {
+  width:max-content;
+  max-width:88%;
+  margin:-8px auto 0;
+  padding:5px 8px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:999px;
+  background:rgba(0,0,0,.24);
+  color:rgba(255,255,255,.56);
+  font-size:8px;
+  font-weight:760;
+  letter-spacing:.10em;
+  backdrop-filter:blur(6px);
+}
+
+/* Finish-coverage camera: show the requested shot clearly and remove odd empty states. */
+.proof-target-card {
+  position:absolute;
+  z-index:5;
+  top:82px;
+  left:18px;
+  right:18px;
+  min-height:58px;
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;
+  background:rgba(12,15,15,.66);
+  color:#fff;
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+  backdrop-filter:blur(16px);
+}
+.proof-target-card > span {
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:rgba(255,255,255,.12);
+  font-size:12px;
+  font-weight:850;
+}
+.proof-target-card strong { display:block; font-size:12px; margin-bottom:2px; }
+.proof-target-card small { display:block; color:rgba(255,255,255,.68); font-size:10px; line-height:1.3; }
+.proof-target-card.complete {
+  border-color:rgba(94,205,139,.34);
+  background:rgba(25,85,53,.58);
+}
+.proof-target-card.complete > span { background:rgba(104,221,151,.18); }
+.proof-camera .filmstrip:empty {
+  height:0;
+  margin-bottom:12px;
+}
+.proof-camera .camera-bottom {
+  padding-top:28px;
+  background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.38) 64%,transparent 100%);
+}
+.proof-camera .shot-count strong { font-size:17px; color:#fff; }
+.shutter:disabled,
+.shutter.complete {
+  opacity:.34;
+  cursor:default;
+}
+.shutter:disabled::after,
+.shutter.complete::after { background:#d7ddda; }
+
+/* Rebooking custom timing. */
+.rebook-other {
+  margin-top:16px;
+  padding-top:2px;
+}
+.rebook-other label {
+  display:block;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.06em;
+}
+
+@media (max-width:390px) {
+  .camera-car-placeholder { width:104%; left:-2%; top:28%; }
+  .proof-target-card { left:14px; right:14px; }
+}
