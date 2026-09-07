@@ -16,19 +16,19 @@ The strongest initial ICP is an owner-operated mobile detailer with roughly 1–
 
 Do not market the product as an “AI app.” Machine assistance should mostly be invisible: photo organization, issue detection, suggested add-ons/pricing context, and proof selection can happen behind the scenes while the merchant remains in control.
 
-See [`research/original-deep-research.md`](research/original-deep-research.md) for the original market/product research that led to this direction.
+The original research that established this direction is committed at [`research/original-deep-research.md`](research/original-deep-research.md). Read it before broadening product scope.
 
 ## Current demo flow
 
 The focused demo is intentionally narrow:
 
 1. **Today** — Sarah Chen is the next job.
-2. **Start walkaround** — enters pre-service mode; the job is **not started yet**.
+2. **Begin walkaround** — enters pre-job mode; the job is explicitly **not started yet**.
 3. **Before walkaround** — take photos continuously with no category selection.
-   - before photos are editable before the job starts;
-   - the worker can add more or remove the last photo;
-   - capture order/timestamps provide stronger evidence than asking AI to guess “before vs. after.”
-4. **Start job** — after the before set is ready, this is the actual operational start boundary.
+   - before photos can be added or removed;
+   - the UI deliberately does **not** call them “locked”;
+   - capture timestamps and edit history are the evidence model, rather than asking AI to infer whether a photo was really “before.”
+4. **Start job** — appears only after a before set exists. This is the actual operational start boundary and changes the job to **IN PROGRESS**.
 5. **Job photos** — keep shooting while working; CoastOps organizes afterward.
 6. **Detected extra work** — example: pet hair in the rear cargo area, with a suggested $40 add-on based on the merchant’s own history.
 7. **Customer approval** — shareable customer link, no app/account required.
@@ -36,15 +36,15 @@ The focused demo is intentionally narrow:
 9. **Review & finish** — CoastOps assembles a proof package.
 10. **Customer proof + payment** — before/after proof, final total, payment, and rebooking handoff.
 
-### Interaction semantics
+## Interaction semantics
 
 - **Teal filled buttons are the primary progression action.** A user should be able to scan the screen and know what advances the workflow.
 - Entering the before walkaround does **not** mark a job as started.
 - The job becomes **IN PROGRESS** only when the user taps **Start job** after before photos.
-- Before photos are **editable until that boundary**. Avoid “locked” language for the editable pre-service set.
-- Customer-facing routes have a visible **green halo** and a `CUSTOMER VIEW · Shareable link · no app needed` indicator.
+- Before photos remain editable. Preserve their capture timestamps and edit/audit history instead of using misleading “locked” language.
+- Customer-facing routes have a visible **green frame/halo** plus a `CUSTOMER VIEW · Shareable link · no app needed` indicator.
 - The camera is a single continuous capture surface. Do not reintroduce front/rear/interior/etc. category taps before each photo.
-- Rapid shutter tapping must not trigger browser double-tap zoom.
+- The operator should interact with the app as little as possible while physically doing the job.
 
 ## UX principles
 
@@ -54,7 +54,7 @@ The target is a mature, low-friction field utility rather than a generic SaaS/AI
 - One screen = one primary question + one primary action.
 - Preserve whitespace when it reduces cognitive load; do not fill empty space simply because it exists.
 - Prefer ordinary rows, dividers, and system typography over nested rounded cards and pills.
-- Use the teal accent selectively for progression/state/navigation.
+- Use the teal accent selectively for progression, active state, and navigation.
 - Photo capture is first-class and should remain faster than manually using a CRM attachment flow.
 - The worker should complete the **job**, not “complete the software.”
 - Customer-facing output should make a tiny detailing company look unusually professional.
@@ -63,38 +63,43 @@ The target is a mature, low-friction field utility rather than a generic SaaS/AI
 ## Files
 
 - `index.html` — static shell and stylesheet/script loading.
-- `styles.css` — original visual system and component styling.
-- `v2.css` — focused proof-to-pay refinements and teal progression styling.
-- `app.js` — core demo state machine/screens.
-- `state-ui.js` — current interaction/semantic layer: pre-service vs. started state, customer-view halo, editable before-photo behavior, rapid-tap camera behavior, and resume states.
-- `research/original-deep-research.md` — original deep research report.
+- `styles.css` — base visual system and component styling.
+- `v2.css` — current proof-to-pay refinements, start/pre-start states, editable-before-photo UI, teal progression styling, and customer-view green halo.
+- `app.js` — the complete demo state machine and screens. Structural behavior belongs here; avoid stacking patch scripts around it.
+- `research/original-deep-research.md` — original market/product deep research.
 - `.github/workflows/pages.yml` — GitHub Pages deployment.
 
 There is deliberately no framework or build step; the mockup is plain HTML/CSS/JS so it can be changed and visually tested quickly.
 
 ## Notes for future agents
 
-Before changing product scope, read this README and the research report. The repo is a **sales/validation mockup**, not a production architecture proposal.
+This repo is a **sales/validation mockup**, not a production architecture proposal. Before making product-scope decisions, read both this README and the research report.
 
-When making UX changes:
+When changing the mockup:
 
 1. Preserve the proof-to-pay thesis and single-camera workflow.
 2. Avoid adding broad CRM features unless the user explicitly asks for them.
 3. Keep all primary progression CTAs teal and visually dominant.
-4. Maintain the semantic start boundary: **walkaround first → Start job second**.
-5. Treat customer pages as a visibly different mode from the internal worker app.
-6. Render the relevant states in headless Chromium at 390×844 after edits and inspect screenshots for clipping, hierarchy, whitespace, accidental density, and misleading state labels.
-7. Check the full flow, not just the edited screen.
-8. Prefer modifying the underlying implementation over stacking fragile visual patches when a change becomes structural.
+4. Preserve the semantic start boundary: **pre-job walkaround → before photos → Start job → active work**.
+5. Never use “locked” for before photos while they remain editable. If evidence integrity matters, represent timestamps/audit history rather than pretending UI immutability.
+6. Keep customer pages visibly different from the internal worker app; currently that is a green halo plus the customer-view strip.
+7. Render relevant states at **390×844** after edits and inspect screenshots for clipping, hierarchy, whitespace, accidental density, and misleading state labels.
+8. Exercise the full interaction path after structural changes, including adding/removing a before photo and verifying that **Start job** is the transition that creates the active state.
+9. Prefer changing `app.js`/the underlying flow over adding another overlay or monkey-patch script.
 
-### Demo state implementation
+Useful direct mockup states for visual inspection include query parameters such as:
 
-`state-ui.js` currently uses session storage to keep the demo’s started/pre-service state coherent across navigation:
+```text
+?screen=today
+?screen=active
+?screen=active&before=4&conditions=2
+?screen=active&before=4&conditions=2&work=1
+?screen=camera&before=4&conditions=2&mode=before
+?screen=customer&before=4&conditions=2&work=1&workshots=6&approval=pending
+?screen=pay&before=4&conditions=2&work=1&workshots=6&approval=approved
+```
 
-- `coastops-demo-started`
-- `coastops-demo-before-count`
-
-This is mockup-only state. A production implementation should use real job/audit records and capture timestamps rather than session storage.
+These are mockup-only shortcuts. A production implementation should use real job records, media objects, audit events, and capture timestamps.
 
 ## Product guardrails
 
@@ -102,7 +107,7 @@ The most important competitive warning from the research is that **photos + invo
 
 CoastOps is only interesting if the complete workflow is materially easier:
 
-> **walk around → shoot freely → start work → photograph an issue → confirm the suggested change → customer approves → finish → proof and payment are already assembled**
+> **walk around → shoot freely → start job → photograph an issue → confirm the suggested change → customer approves → finish → proof and payment are already assembled**
 
 The product should prove that a worker can create a trustworthy job record with almost no administrative work.
 
