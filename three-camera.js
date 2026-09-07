@@ -274,6 +274,7 @@
         object: door,
         baseQuaternion: door.quaternion.clone(),
         angle: 0,
+        motion: { angle:0 },
       });
     }
 
@@ -379,16 +380,16 @@
     );
     door.object.quaternion.copy(door.baseQuaternion).multiply(localYaw);
     door.angle = angleDeg;
+    door.motion.angle = angleDeg;
   }
 
   function tweenDoor(timeline, name, targetAngle, duration, at) {
     const door = state.doors.get(name);
     if (!door) return;
-    const proxy = { angle:door.angle };
-    timeline.to(proxy, {
+    timeline.to(door.motion, {
       angle:targetAngle,
       duration,
-      onUpdate:() => applyDoor(name, proxy.angle),
+      onUpdate:() => applyDoor(name, door.motion.angle),
     }, at);
   }
 
