@@ -30,7 +30,10 @@
         border-radius: 10px;
         font-size: 14px;
         margin-top: 1px;
+        background: var(--accent) !important;
+        box-shadow: 0 2px 8px rgba(11,111,120,.18) !important;
       }
+      .next-job-block .home-start:active { background: var(--accent-hover) !important; }
 
       .customer-brand { position:relative; padding-right:112px; min-height:47px; }
       .return-home {
