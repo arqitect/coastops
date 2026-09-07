@@ -47,7 +47,7 @@
   const sequences = {
     before:walkaround,
     work:walkaround,
-    proof:[rearThreeQuarter, rearSeats, passengerSide, passengerArea, frontThreeQuarter],
+    proof:[rearThreeQuarter, rearSeats, passengerSide, passengerArea, frontThreeQuarter, driverSide],
   };
 
   const state = {
