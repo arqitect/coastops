@@ -15,21 +15,21 @@
     id:'driver-seat', kind:'interior', carY:-Math.PI/2,
     door:'Door_Front_Left', doorAngle:78, preDoor:34,
     approach:[4.42,1.48,-0.28], camera:[4.02,1.34,-0.24],
-    target:[1.14,0.95,0.14], fov:50, cabinLight:.34,
+    target:[1.14,0.95,0.14], fov:50, cabinLight:1.48,
   };
 
   const rearSeats = {
     id:'rear-seats', kind:'interior', carY:-Math.PI/2,
     door:'Door_Rear_Left', doorAngle:80, preDoor:34,
     approach:[4.28,1.44,-1.26], camera:[3.90,1.30,-1.24],
-    target:[1.02,0.94,-1.00], fov:50, cabinLight:.36,
+    target:[1.02,0.94,-1.00], fov:50, cabinLight:1.50,
   };
 
   const passengerArea = {
     id:'passenger-area', kind:'interior', carY:Math.PI/2,
     door:'Door_Front_Right', doorAngle:78, preDoor:34,
     approach:[-4.42,1.48,-0.28], camera:[-4.02,1.34,-0.24],
-    target:[-1.14,0.95,0.14], fov:50, cabinLight:.32,
+    target:[-1.14,0.95,0.14], fov:50, cabinLight:1.46,
   };
 
   // Keep the guide on one clockwise physical walkaround. Interior beats stay on
@@ -60,9 +60,7 @@
     THREE:null,
     gsap:null,
     GLTFLoader:null,
-    RoomEnvironment:null,
     renderer:null,
-    environmentTarget:null,
     scene:null,
     camera:null,
     target:null,
@@ -88,7 +86,7 @@
     style.textContent=`
       .camera-car-placeholder{transition:opacity 150ms ease,visibility 150ms ease}
       .viewfinder.car-guide-ready .camera-car-placeholder{opacity:0;visibility:hidden}
-      .car-guide-stage{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity 170ms ease;contain:layout paint style;background:radial-gradient(ellipse at 50% 92%,rgba(255,255,255,.08),rgba(255,255,255,.03) 20%,transparent 46%),linear-gradient(180deg,#2a3031 0%,#1b2122 40%,#0f1416 100%)}
+      .car-guide-stage{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity 170ms ease;contain:layout paint style;background:radial-gradient(ellipse at 50% 70%,rgba(213,224,222,.16),rgba(40,49,49,.06) 34%,transparent 61%),radial-gradient(circle at 22% 17%,rgba(227,235,235,.12),transparent 37%),linear-gradient(155deg,#202727,#101515 52%,#080b0c)}
       .car-guide-stage.ready{opacity:1}
       .car-guide-stage canvas{width:100%;height:100%;display:block}
       .car-guide-stage::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;background:rgba(255,255,255,.22)}
@@ -141,12 +139,10 @@
     state.runtimePromise=Promise.all([
       import('three'),
       import('three/addons/loaders/GLTFLoader.js'),
-      import('three/addons/environments/RoomEnvironment.js'),
       loadGsap(),
-    ]).then(async([THREE,loaderModule,environmentModule,gsap])=>{
+    ]).then(async([THREE,loaderModule,gsap])=>{
       state.THREE=THREE;
       state.GLTFLoader=loaderModule.GLTFLoader;
-      state.RoomEnvironment=environmentModule.RoomEnvironment;
       state.gsap=gsap;
       setupThree();
       await loadModel();
@@ -175,23 +171,20 @@
     state.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
     state.renderer.outputColorSpace=T.SRGBColorSpace;
     state.renderer.toneMapping=T.ACESFilmicToneMapping;
-    state.renderer.toneMappingExposure=1.04;
+    state.renderer.toneMappingExposure=1.12;
     state.renderer.domElement.setAttribute('aria-hidden','true');
 
-    const roomEnvironment=new state.RoomEnvironment();
-    const pmremGenerator=new T.PMREMGenerator(state.renderer);
-    state.environmentTarget=pmremGenerator.fromScene(roomEnvironment,.04);
-    state.scene.environment=state.environmentTarget.texture;
-    roomEnvironment.dispose?.();
-    pmremGenerator.dispose();
-
-    state.scene.add(new T.AmbientLight(0xf6f7f7,.42));
-    state.scene.add(new T.HemisphereLight(0xf2f5f6,0x0f1315,.28));
+    state.scene.add(new T.AmbientLight(0xf5f7f7,1.18));
+    state.scene.add(new T.HemisphereLight(0xf4f8f8,0x141718,.88));
     const light=(color,intensity,pos)=>{const l=new T.DirectionalLight(color,intensity);l.position.set(...pos);state.scene.add(l);};
-    light(0xffffff,2.7,[5.2,6.6,5.4]);
-    light(0xe7eef0,.82,[-6.0,2.8,-4.6]);
-    light(0xffffff,.46,[.8,4.8,-6.4]);
-    state.cabinLight=new T.PointLight(0xffe8c7,.10,5.5,2);
+    light(0xffffff,3.4,[4.8,6.8,5.6]);
+    light(0xcad9df,1.55,[-6.2,2.8,3.8]);
+    light(0xb8d2de,1.48,[-.4,3.7,-6.6]);
+    const overhead=new T.SpotLight(0xffffff,1.65,18,Math.PI/3.1,.62,1.4);
+    overhead.position.set(0,8.6,2.2);
+    overhead.target.position.set(0,.35,0);
+    state.scene.add(overhead,overhead.target);
+    state.cabinLight=new T.PointLight(0xffe8c7,.18,5.5,2);
     state.cabinLight.position.set(0,1.18,.05);
     state.scene.add(state.cabinLight,makeContactShadow());
   }
@@ -200,10 +193,10 @@
     const T=state.THREE,c=document.createElement('canvas');
     c.width=256;c.height=128;
     const ctx=c.getContext('2d'),g=ctx.createRadialGradient(128,64,7,128,64,120);
-    g.addColorStop(0,'rgba(0,0,0,.24)');g.addColorStop(.48,'rgba(0,0,0,.11)');g.addColorStop(1,'rgba(0,0,0,0)');
+    g.addColorStop(0,'rgba(0,0,0,.48)');g.addColorStop(.48,'rgba(0,0,0,.25)');g.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=g;ctx.fillRect(0,0,256,128);
     const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;
-    const mesh=new T.Mesh(new T.PlaneGeometry(6.4,2.7),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,opacity:.52}));
+    const mesh=new T.Mesh(new T.PlaneGeometry(5.8,2.4),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,opacity:.72}));
     mesh.rotation.x=-Math.PI/2;mesh.position.set(0,.01,-.04);mesh.renderOrder=-1;
     return mesh;
   }
@@ -268,9 +261,9 @@
         seen.add(mat.uuid);
         const name=(mat.name||'').toLowerCase();
         if(name==='composit'||name.includes('body')){
-          mat.color?.setHex(0xd9dddc);if('metalness'in mat)mat.metalness=.26;if('roughness'in mat)mat.roughness=.18;if('clearcoat'in mat)mat.clearcoat=.90;if('clearcoatRoughness'in mat)mat.clearcoatRoughness=.10;if('envMapIntensity'in mat)mat.envMapIntensity=1.0;
+          mat.color?.setHex(0xd9dddc);if('metalness'in mat)mat.metalness=.34;if('roughness'in mat)mat.roughness=.23;if('clearcoat'in mat)mat.clearcoat=.72;if('clearcoatRoughness'in mat)mat.clearcoatRoughness=.16;
         }else if(name.includes('glass')){
-          mat.color?.setHex(name.includes('red')?0x7e1c20:0x273231);mat.transparent=true;mat.opacity=name.includes('red')?.76:.46;if('roughness'in mat)mat.roughness=.08;if('metalness'in mat)mat.metalness=0;if('envMapIntensity'in mat)mat.envMapIntensity=1.1;mat.depthWrite=false;
+          mat.color?.setHex(name.includes('red')?0x7e1c20:0x273231);mat.transparent=true;mat.opacity=name.includes('red')?.76:.46;if('roughness'in mat)mat.roughness=.12;if('metalness'in mat)mat.metalness=0;mat.depthWrite=false;
         }else if(name.includes('leather')){
           mat.color?.setHex(0x655242);if('metalness'in mat)mat.metalness=.02;if('roughness'in mat)mat.roughness=.58;
         }else if(name==='light'||name==='red light'){
@@ -340,7 +333,7 @@
     const camera=frame.camera,target=frame.target,fov=frame.fov;
     const approach=isExterior?camera:frame.approach;
     const carY=nearestAngle(state.car.rotation.y,nextPose.carY??0);
-    const cabin=isExterior?.10:(nextPose.cabinLight??.34);
+    const cabin=isExterior?.18:(nextPose.cabinLight??1.45);
 
     if(!animate||reducedMotion){
       state.car.rotation.y=carY;
