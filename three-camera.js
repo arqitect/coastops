@@ -213,14 +213,25 @@
     state.scene.add(state.cabinLight);
 
     state.scene.add(makeContactShadow());
+    startRenderLoop();
+  }
 
-    const loop = () => {
-      state.raf = requestAnimationFrame(loop);
-      if (!state.mounted || document.hidden || !state.renderer || !state.stage?.isConnected) return;
+  function startRenderLoop() {
+    if (state.raf) return;
+    state.raf = requestAnimationFrame(renderFrame);
+  }
+
+  function renderFrame() {
+    state.raf = 0;
+    if (!state.mounted || !state.renderer || !state.stage?.isConnected) {
+      state.mounted = false;
+      return;
+    }
+    if (!document.hidden) {
       state.camera.lookAt(state.cameraTarget);
       state.renderer.render(state.scene, state.camera);
-    };
-    loop();
+    }
+    state.raf = requestAnimationFrame(renderFrame);
   }
 
   function makeContactShadow() {
@@ -531,6 +542,7 @@
     state.stage = stage;
     state.viewfinder = viewfinder;
     state.mounted = true;
+    startRenderLoop();
 
     if (state.renderer && state.renderer.domElement.parentElement !== stage) {
       stage.appendChild(state.renderer.domElement);
@@ -553,6 +565,8 @@
     const viewfinder = document.querySelector('.camera-screen .viewfinder');
     if (!viewfinder) {
       state.mounted = false;
+      if (state.raf) cancelAnimationFrame(state.raf);
+      state.raf = 0;
       state.stage = null;
       state.viewfinder = null;
       state.resizeObserver?.disconnect();
