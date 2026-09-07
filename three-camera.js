@@ -12,7 +12,7 @@
   // The camera stays outside the opening at roughly steering-wheel / seat-back height,
   // matching common dealership/detailing photos rather than flying into the hinge.
   const driverSeat = {
-    id:'driver-seat', kind:'interior', carY:0,
+    id:'driver-seat', kind:'interior', carY:Math.PI/2,
     door:'Door_Front_Left', doorAngle:78, preDoor:34,
     approach:[4.42,1.48,-0.28], camera:[4.02,1.34,-0.24],
     target:[1.14,0.95,0.14], fov:50, cabinLight:1.48,
@@ -20,7 +20,7 @@
 
   const rearSeats = {
     id:'rear-seats', kind:'interior', carY:Math.PI,
-    door:'Door_Rear_Left', doorAngle:72, preDoor:30,
+    door:'Door_Rear_Left', doorAngle:76, preDoor:32,
     approach:[4.28,1.44,-1.26], camera:[3.90,1.30,-1.24],
     target:[1.02,0.94,-1.00], fov:50, cabinLight:1.50,
   };
@@ -32,12 +32,12 @@
     target:[-1.14,0.95,0.14], fov:50, cabinLight:1.46,
   };
 
-  // One continuous clockwise visual tour with interior beats between exterior rotations.
-  // This reads more like a guided walkaround than "four exteriors, then three doors".
+  // Keep the guide moving clockwise. At each side, show the exterior first, then
+  // dip through the nearby doorway before continuing around the car.
   const walkaround = [
     frontThreeQuarter,
-    driverSeat,
     driverSide,
+    driverSeat,
     rearThreeQuarter,
     rearSeats,
     passengerSide,
@@ -47,7 +47,7 @@
   const sequences = {
     before:walkaround,
     work:walkaround,
-    proof:[rearSeats, passengerSide, passengerArea, rearThreeQuarter, frontThreeQuarter],
+    proof:[rearThreeQuarter, rearSeats, passengerSide, passengerArea, frontThreeQuarter],
   };
 
   const state = {
