@@ -59,9 +59,13 @@
       user-select:none;
       -webkit-tap-highlight-color:transparent;
     }
-    .shutter { touch-action:manipulation !important; }
+    .shutter { touch-action:none !important; }
   `;
   document.head.appendChild(style);
+
+  document.addEventListener('dblclick', event => {
+    if (event.target.closest('.shutter')) event.preventDefault();
+  }, { passive:false });
 
   function route() {
     return new URLSearchParams(location.search).get('screen') || 'today';
@@ -218,15 +222,18 @@
     const title = app.querySelector('.camera-title')?.textContent || '';
     if (!/Before walkaround/i.test(title) || started) return;
     const bottom = app.querySelector('.camera-bottom');
-    if (!bottom || bottom.querySelector('.camera-remove')) return;
-    const button = document.createElement('button');
-    button.className = 'camera-remove';
-    button.type = 'button';
+    if (!bottom) return;
     const count = Number(document.getElementById('shotnum')?.textContent || 0);
+    let button = bottom.querySelector('.camera-remove');
+    if (!button) {
+      button = document.createElement('button');
+      button.className = 'camera-remove';
+      button.type = 'button';
+      button.textContent = 'Remove last photo';
+      button.onclick = removeLastBeforePhoto;
+      bottom.insertBefore(button, bottom.querySelector('.capture-row'));
+    }
     button.disabled = count <= 0;
-    button.textContent = 'Remove last photo';
-    button.onclick = removeLastBeforePhoto;
-    bottom.insertBefore(button, bottom.querySelector('.capture-row'));
   }
 
   function enhanceCustomerView() {
@@ -249,6 +256,6 @@
   }
 
   const observer = new MutationObserver(() => queueMicrotask(enhance));
-  observer.observe(app, { childList:true, subtree:true });
+  observer.observe(app, { childList:true, subtree:true, characterData:true });
   enhance();
 })();
